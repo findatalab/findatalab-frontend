@@ -42,7 +42,7 @@ export default function HomePage() {
                   помощью больших языковых моделей. В рамках проекта изучаются реакции разных групп LLM на актуальные
                   новости и события, а также их сопоставление с реакциями реальных людей.
                 </p>
-                <Link href="/fingpt">Обсудить с FinGPT</Link>
+                <Link href="/llmcity">Обсудить с LLM City</Link>
               </article>
 
               <article className="project-card">
@@ -52,7 +52,7 @@ export default function HomePage() {
                   обрабатывают и интерпретируют информацию из новостных источников, включая анализ влияния на тренды
                   стоимости финансовых активов.
                 </p>
-                <Link href="/fingpt">Обсудить с FinGPT</Link>
+                <Link href="https://metabase.findatalab.ru/public/dashboard/3afdc7ce-c769-4500-a61a-db3ee088688b">Дашборд</Link>
               </article>
 
               <article className="project-card">
