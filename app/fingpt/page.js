@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'isomorphic-dompurify';
 
-const CHAT_ENDPOINT = process.env.NEXT_PUBLIC_CHAT_ENDPOINT || 'http://localhost:1416/chat/completions';
+const CHAT_ENDPOINT = '/api/chat';
 const CHAT_MODEL = process.env.NEXT_PUBLIC_CHAT_MODEL || 'finenroll';
 const CHAT_HISTORY_ID_ENV = process.env.NEXT_PUBLIC_CHAT_HISTORY_ID;
 const CHAT_HISTORY_STORAGE_KEY = 'fingpt_chat_history_id';
@@ -130,7 +130,9 @@ export default function FinGptPage() {
         {
           role: 'llm',
           sender: 'FinGPT: ',
-          text: `Не удалось получить ответ от сервера. ${error?.message || ''} Проверьте endpoint ${CHAT_ENDPOINT}.`,
+          text: `Извините, сейчас не получилось получить ответ. \
+          Попробуйте связаться с админом или отправить сообщение ещё раз через несколько минут. \
+          ${error?.message ? ` Техническая деталь: ${error.message}.` : ''}`,
         },
       ]);
     } finally {
