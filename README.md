@@ -22,10 +22,11 @@ App will be available at `http://localhost:3000`.
 
 The chat page (`/fingpt`) sends messages to:
 
-`http://localhost/chat`
+`http://localhost:1416/chat/completions`
 
 You can override it with:
 
 ```bash
-NEXT_PUBLIC_CHAT_ENDPOINT=http://localhost/chat
+NEXT_PUBLIC_CHAT_ENDPOINT=http://localhost:1416/chat/completions
+NEXT_PUBLIC_CHAT_MODEL=my_agent
 ```

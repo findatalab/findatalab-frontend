@@ -5,7 +5,73 @@ import { useMemo, useState } from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'isomorphic-dompurify';
 
-const CHAT_ENDPOINT = process.env.NEXT_PUBLIC_CHAT_ENDPOINT || 'http://localhost:5000/chat';
+const CHAT_ENDPOINT = process.env.NEXT_PUBLIC_CHAT_ENDPOINT || 'http://localhost:1416/chat/completions';
+const CHAT_MODEL = process.env.NEXT_PUBLIC_CHAT_MODEL || 'finenroll';
+const CHAT_HISTORY_ID_ENV = process.env.NEXT_PUBLIC_CHAT_HISTORY_ID;
+const CHAT_HISTORY_STORAGE_KEY = 'fingpt_chat_history_id';
+
+function createChatHistoryId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `fingpt_chat_history_${crypto.randomUUID()}`;
+  }
+
+  return `fingpt_chat_history_${Date.now()}`;
+}
+
+function getOrCreateChatHistoryId() {
+  if (CHAT_HISTORY_ID_ENV) {
+    return CHAT_HISTORY_ID_ENV;
+  }
+
+  if (typeof window === 'undefined') {
+    return 'fingpt_chat_history';
+  }
+
+  const existingId = window.localStorage.getItem(CHAT_HISTORY_STORAGE_KEY);
+  if (existingId) {
+    return existingId;
+  }
+
+  const newId = createChatHistoryId();
+  window.localStorage.setItem(CHAT_HISTORY_STORAGE_KEY, newId);
+
+  return newId;
+}
+
+function extractAssistantText(data) {
+  if (!data || typeof data !== 'object') {
+    return '';
+  }
+
+  if (typeof data.reply === 'string') {
+    return data.reply;
+  }
+
+  if (typeof data.content === 'string') {
+    return data.content;
+  }
+
+  const firstChoice = data.choices?.[0];
+  if (!firstChoice) {
+    return '';
+  }
+
+  if (typeof firstChoice.text === 'string') {
+    return firstChoice.text;
+  }
+
+  if (typeof firstChoice.message?.content === 'string') {
+    return firstChoice.message.content;
+  }
+
+  if (Array.isArray(firstChoice.message?.content)) {
+    return firstChoice.message.content
+      .map((item) => (typeof item?.text === 'string' ? item.text : ''))
+      .join('');
+  }
+
+  return '';
+}
 
 function MarkdownMessage({ text }) {
   const safeHtml = useMemo(() => {
@@ -20,6 +86,7 @@ export default function FinGptPage() {
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [chatHistoryId] = useState(() => getOrCreateChatHistoryId());
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -28,7 +95,10 @@ export default function FinGptPage() {
       return;
     }
 
-    setMessages((prev) => [...prev, { role: 'user', sender: 'Вы: ', text: messageText }]);
+    const userMessage = { role: 'user', sender: 'Вы: ', text: messageText };
+    const requestMessages = [...messages, userMessage];
+
+    setMessages(requestMessages);
     setUserInput('');
     setIsSending(true);
 
@@ -36,7 +106,14 @@ export default function FinGptPage() {
       const response = await fetch(CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: messageText }),
+        body: JSON.stringify({
+          model: CHAT_MODEL,
+          messages: requestMessages.map((entry) => ({
+            role: entry.role === 'user' ? 'user' : 'assistant',
+            content: entry.text,
+          })),
+          chat_history_id: chatHistoryId,
+        }),
       });
 
       if (!response.ok) {
@@ -44,14 +121,16 @@ export default function FinGptPage() {
       }
 
       const data = await response.json();
-      setMessages((prev) => [...prev, { role: 'llm', sender: 'FinGPT: ', text: data.reply || '' }]);
-    } catch {
+      const assistantText = extractAssistantText(data);
+
+      setMessages((prev) => [...prev, { role: 'llm', sender: 'FinGPT: ', text: assistantText }]);
+    } catch (error) {
       setMessages((prev) => [
         ...prev,
         {
           role: 'llm',
           sender: 'FinGPT: ',
-          text: 'Не удалось получить ответ от сервера. Проверьте, что endpoint доступен по адресу http://localhost/chat.',
+          text: `Не удалось получить ответ от сервера. ${error?.message || ''} Проверьте endpoint ${CHAT_ENDPOINT}.`,
         },
       ]);
     } finally {
