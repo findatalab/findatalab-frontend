@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'isomorphic-dompurify';
 
-const CHAT_ENDPOINT = '/chat/completions';
+const CHAT_ENDPOINT = 'api/chat/';
 const CHAT_MODEL = process.env.NEXT_PUBLIC_CHAT_MODEL || 'finenroll';
 const CHAT_HISTORY_ID_ENV = process.env.NEXT_PUBLIC_CHAT_HISTORY_ID;
 const CHAT_HISTORY_STORAGE_KEY = 'fingpt_chat_history_id';
